@@ -1,0 +1,766 @@
+Jenkins, CI
+Simple WorkFlow SWF: look for more info, discuss with team
+
+
+
+Keynote Wednesday:
+	aurora:
+		play with it
+	CodePipe (?): 
+		New CI tool from AWS to discuss with team. Available early 2015
+	AWS Key Management Service:
+		KMS from AWS. Create/delete/view/set policy. Automatic key rotation. Visibility to CloudTrail. Stored in HSM. Integrated with S3, EBS, RDS, Redshift. Highly available.
+	AWS Config:
+		Discovery of Current Resource Configuration. Track relationships and dependencies. Suscribe to a stream (API, UI, etc) fof continous updates.
+	AWS Service Catalog: 
+		early 2015. Create product portfolios. End-user launch a product as a stack.
+	
+	Enterprise migrations to public cloud:
+		Websites, Analytics, Mobile, critical applications, whole datacenterso
+
+	Directory Service:
+		AD integration. Take a look.
+
+	Workspaces:
+		J&J uses it. Talk to Jonathan
+	
+
+Nike's journey to microservices:
+ Amber Milavec - Sr Technical Architect - Infrastructure, Nike, Inc.
+ Jason Robey - Director of Database and Data Services, Nike, Inc.
+ ? seen just one of them who talk like 
+	2 screenshots
+	phoenix pattern
+	Netflix Master Zuul. TAke a look
+	Netflix Asgard
+	screenshot "Getting to production fast"
+	Noetification pattern (see phone screenshot)
+	denormalization. API hits: instead of { everything:, you: can: submit: } => /api/you, /api/can, /api/submit
+		clients ask for the information they need
+		no-logic composites
+		clients albe to effectively cache
+		* see phone screenshot "Client benefit"
+		it scales better
+
+	Continuous delivery
+		opensource feel -- pickup a project and improve it
+		2 screenshots "2014: Continuous Delivery"
+		
+	Resume:
+		Netflix OSS
+
+	Pub crawl: to check
+
+
+ARC307 - Infrastructure as Code.
+ David Winter Enterprise Sales
+ Alex Corley SA AWS
+ Tom Wanielista Chief Engineer Simple
+	CloudFrormation alternatives
+	Simple: new bank service.
+		Insight: scanning AMIs
+		PCI complicates processes in most of the companies. Simple declares to solve the problem with CloudFormation
+		cloudbank: python project by Simple. Compiler of model to cloudformaiton config. ?
+		https://www.simple.com/engineering/infrastructure-as-code
+
+	http://infrastructureascode-arc307.com/
+	business, operations & dev problems all solved with infrastructure as code
+	infrastructure is a part of a project
+	Alex Card in my backpack
+	CloudFormer
+	
+RC203 - Expanding Your Data Center with Hybrid Infrastructure
+ Rich Uhl - Enterprise Solutions Architect, Amazon Web Services
+ Derek Lyon - Principle Product Manager, Amazon EC2, Amazon Web Services
+ Theo Carpenter - Systems Engineer, Woot.com
+ Daniel Pinkard - Manager, Systems Admin, Woot.com
+ 	Business patterns and challenges
+		Hybrid infrastructure environment screenshot	
+		learn from other companies
+		use tools to flatten learning curve for SA:
+			Systems Manager for SCVMM
+			AWS Storage Gateway: take a look
+			AWS Management portal for VCenter
+				allows to migrate boxes to EC2
+				integrates authentication IAM-AD
+				allows to manage VPC, subnets, etc
+				resource based tagging
+		Woot:
+			http://aws.amazon.com/windows/system-center/
+				
+			
+PFC306 - Performance Tuning Amazon EC2 Instances
+ Brendan Gregg Senior Performance Architect , Netflix
+ 	10s k EC2 instances
+
+	Instance selection
+		some screenshots
+		by-resource approach
+			determine bounding resource (cpu, io, net)
+			found using
+				estimation (expertise)
+				resource observability with an existing real workload
+				Nomogram Visualization tool screenshot
+			Brute force choice
+				run load test on all instance types
+				measure throughput
+				calculate price/performance
+				! Latency requirements: check for an acceptable latency distiribution optimizing for price/performance (screenshot)
+			Variance/usage/cost
+				requirements for performance may change
+				continually monitor performance, analyze variance/outliers
+				Instane Usage
+					re-evaluate new instance types
+				Instance Cost
+					also checked regularly. Tuning the price/performance
+
+	Amazon EC2 Features
+		Xen Modes: HVM, PV
+			HVM==PVHVM actually
+			See "Xen Modes" screenshot
+			new mode: PVH ?
+		SR-IOV
+			Single Root I/O virtualization
+				PCIe device provides virtualized instances
+				screenshot "SR-IOV"
+				as paket rate grow virtualization overhead grows dramatically, SR-IOV solves the problem
+	
+	Kernel Tuning
+		Typycally 5-25% wins for avg
+		Bigger wins when reducing latency outliers
+		Deploying tuning
+		Kernel Tuning screenshot
+
+		OS Distributions Netflix uses
+			CentOS
+			Ubuntu
+
+		Tunable parameters include sysctl and /sys
+
+		Tunables
+			CPU Scheduler (screenshot)
+				Tunables
+					scheduler class, priorities, migration latency
+				Usage
+					taskset, numactl, cgroups, sched_migration_cost_ns
+					Java apps may benefit from SCHED_BATCH: schedtool -B PID
+			Virtual Memory (screenshot)
+				Tunables
+					swappiness, overcommit, OOM behaviour
+			Huge Pages (screenshot)
+				Page size of 2-4MB instead of 4k should reduce va
+				Tunables:
+					explicit huge page usages, transparent huge pages (THPs)
+				Usage:
+					THPs depending on workloads & CPUs sometimes improve perf 5% but sometimes hurts 25% during %usr and more during %sys refrag
+					to disable: echo never > /sys/kernel/mm/transpared_hugepage/enabled
+				Overall larger TLB in CPU would help
+			File System (screenshot)
+				Tunables
+					page cache flushing behaviour, fs type and its own tunables (ZFS on linux)
+			Storage I/O (screenshot)
+				Tunables:
+					read ahead size, number of in-flight requests, I/O scheduler, volume stripe
+				Usage:
+					Some workloads (cassandra) can be sensitive to read ahead size
+					SSD can perform bettter with noop schdeluer
+			Networking (screenshot)
+				Tunables:
+					TCP buffer size
+					TCP backlog
+					device backlog
+					TCP reuse
+			Hypervisor (Xen)
+				Tunables:
+					PV/HVM
+					Kernel clocksource
+				Usage:
+					TSC (take a look)
+
+		Observability
+			Inefficient Tuning (screenshot)
+				Whack-A-Mole Anti-Method:
+					tune things at random until the problem goes away
+				Street Light Anti-Method:
+					pick observability tools that are familier, available, at random
+					run tools
+					look for obvious issues
+				Blame-someone-sele anti-method (screenshot, skip couple)
+
+			Efficient Tuning (screenshot)
+				Based on observability (data-driven)
+					observe workload and reosource usage
+					analyzejresults
+			USE Method (take a look) screenshot
+				for every hardware and software resource check: utilization, saturation, errors (USE)
+				resource constrainst show as saturation or high utilization
+					resize or change instance type
+					investigate tunables for the resources
+				the USE method
+			Exonerating the instance
+				observability often exonerates the instance
+				80% improvement gained by app refactoring and tuning, 20% by OS tuning
+
+			Finding the monkey
+				The netflix latency monkey
+
+		Analyzisi Perspectives
+
+		Tools
+			Statistical tools
+				vmstat, pidstat, sar
+			Profiling tools
+				on-CPU stack traces to explain
+				Application profiling
+					The lightweight Java Profilier (LJP)
+			System Profiling tools:
+				?
+			Tracing tools
+				ftrace
+				iosnoop
+				perf_events
+			Hardware counters
+				MSR
+					showboost
+			Netflisx online tools
+				atlas
+				Vector
+	Summary
+		Instance Selection
+		Amazon EC2 features
+		Kernel Tuning
+		Observability
+
+	He'll upload slides to slideshare
+
+
+
+ARC317 - Maintaining a Resilient Front Door at Massive Scale
+ Daniel Jacobson - VP of Engineering, Edge and Playback, Netflix
+ Benjamin Schmaus - Director, Edge Systems, Netflix
+ http://www.slideshare.net/danieljacobson/maintaining-the-front-door-to-netflix-the-netflix-api
+
+ 	34% of traffic in US (downstream), 6% of traffic upstream
+	Team does:
+		resiliency
+		scale
+
+	!Session about Mesos on Friday (check tonight)
+	Zuul
+		routing traffic
+			multi-reg resiliency
+				failover:
+					zuul routes traffic across coasts in case of region failure
+				failover is done via DNS
+			dyamic routing
+			squeeze testing
+				check throughtput
+				via finding breaking point
+			insights
+				6B requests per day
+				none of dependent services has 100% SLA
+			load shredding
+
+		device -> NLB -> Zuul -> API -> depended services
+		Debug instance/installation. Route part of requests to debug instance via zuul
+			
+	Hystrix
+		monitoring solution
+
+	
+	Demo (by Benjamin)
+		grepzilla (real time distributed grep+tail)
+			map-reduce solution for logs
+		tvui - webkit based browser run on devices
+
+		dynprod ?
+			dynamically provisions required services
+		spinnaker
+			cloud infrastructure management tool
+	
+	Daniel continues...
+	Autoscaling
+		reactive autoscaling
+			reacts to real-time conditions
+			responds to spikes/dips in metrics (LA, RPS)
+			challenges:
+				policies can be inefficient when traffic patterns vary
+				performance degratdation during instance startup
+				outages can trigger scale down events
+				excess capacity at peak time
+			solution from netflix: Skryer
+				
+
+		active autoscaling
+			Skryer
+				predicts RPS copared to Actual 
+				evaluates needs based on hitorical data
+				adjust instance minimums based on algorithms
+			Skryer results:
+				response time more consistent
+				outage recovery
+				AWS costs drop down
+	Key Takeaways
+		routing is important
+		resiliency is important
+		scaling is important
+			proactive in capacity
+		open source software
+
+	Friday at booth: 1-3PM
+			
+
+THURSDAY 11/13
+
+Keynote
+	Splunk
+	Omniphone (platform used by Spotify, SiriusXM, Music Unlimited, GUVERA, SoundCloud)
+	AWS Containers Management service (to take a look) ECS
+	check out keynote slides TODO
+	Try lambda, preview available aws.amazon.com/lambda
+
+PFC402 - Bigger, Faster: Performance Tips for High Speed and High Volume Applications
+ Ben Clay - Software Development Engineer, Amazon Web Services
+ Brett McCleary - VP of Software Development, Precision Exams
+ 
+ Ben Clay - Software Development Engineer, Amazon Web Services
+ 	DynamoDB
+		scales throughput and storage separately
+		document AND key-value models supported
+
+	DynamoDB scaleing
+		partitions are equal
+		
+	big threadpools degrade performance because of context switch
+
+	provisioning bursting is done automatically when they see overprovisioning events
+
+	Best practices for data design
+		even spreading data among shards by selecting keys
+			use keys that are queriable and uniformity
+		avoid heat skew on key indexes
+			indexing mechanics
+				index progagation
+				global secondary indexes partitioned independently from the table
+			index keys behave like table keys
+		Prune frequently-scale tables
+			limit growth by deleting old records
+				table growth can impact throughput per key
+				important when: accumulationg infrequently-read data
+		Rotate tables for finer granuality
+			cheaper than deleting old records
+			rotate for free deletes + cheaper scans
+				smaller tables increase throughput per key
+				deleting whole tables = no throughput cost
+				takeaway: time series data chunks very well
+				important when: big, *gowing* time series tables
+		Export with DynamoDB Streams
+			last month's records: data warehousing
+			dynamodb vs data warehousing (redshift)
+				dynamo: real-time, random writes, HA
+				warehouse: bulk ingestion, sequential writes, ad-hoc queries
+			exporting from dynamodb to warehouse
+				scanning: bad because warehouse data gets outdated
+				dynamodb streams(in preview): bridge to other data stores with streams (take look at). Enabled on DynamoDB tables
+	
+	Summary
+		select keys based on queryablitity and uniformity
+		account for heat skew on index keys
+	
+ Ben Clay - Software Development Engineer, Amazon Web Services
+ 	consistent performance of dynamodb under the load, low ownership cost
+	Steps they selected dynamodb:
+		know your data
+			hottest tables
+			traffic patterns (read and write loads)
+			data size and structure
+		performance testing
+			separate load from measurement
+			important when: under high loads, multiple servers prevent from client latency skew
+			accourate synthetic workloads (reply engine, realistic models to access all partitions)
+			The Grinder - opensource frameworks
+			Test Harness
+				takeaway: use client threads to create workload
+				important when: load testing to simulate real world traffic
+			JVM Tuning
+				GC, heap size, monito application
+					Takeaway: GC and heap size will impact latency metrics
+					important when: have inexplicable delays
+		Analysis
+			P90 client latency, AVG server latency, AVG client latency
+			
+PFC403 - Maximizing Amazon S3 Performance
+ Felipe Garcia - Solutions Architect, Amazon Web Services
+ 	137% grouth comparing to 2013
+
+	Architecture
+		Choose region
+			Performance
+				proximity to users
+				co-location with compute
+			Other
+				Legal, compliance
+				Costs vary by region
+		Building a naming scheme
+			>100TPS
+				usual workflow shown with 8 transactions on a user event => 100TPS becomes 12.5TPS
+				100k users @10 events an hour - 224 TPS
+			Distributing keynames
+				add randomness to beginning of the key name
+				add original name as metadata and use hash as object name
+				prepend key name with short hash (4-6 chars)
+				epoch time reverse
+				Randomness in key names can be anti-pattern
+					lifecycle policies
+				Solution: use folders (take a look TODO)
+
+	Optimize PUTSs
+		multipart upload
+			parallelizing PUTs with multipart upload
+				increase aggregate throughput
+					move the bottleneck to the network where it belongs
+				increase resiliency to network errors; fewer large restarts on error-prone networks
+				allows faster, more flexible uploads
+				object is a set of parts
+				upon upload S3 presents all parts as a single object
+				parallel uploads, pausing and resuming an opject upload and beginning  uploads before you know total object size
+			choose the right part size
+				recoomendation 
+					25-50MB on higher-bandwidth
+					10MB on mobile networks
+				increasing number of parts also increases connection overhead
+				SSL and parallelizing
+					S3 recommends using AES-256 to optimize for security and performance to leverage AES-NI hardware
+		demo
+			500MB
+				10 chunks:
+					sequential: 21sec
+					parallel: 3sec
+				20 chunks:
+					sequential: 41sec 
+					parallel: 6sec
+	Optimize GETs
+		Using CloudFront CDN
+			caches objects from S3
+			reduces the number of S3 GETs
+			low latency with multiple endpoints
+			high transfer rate
+			Two flavors:
+				Web distribution
+				RTMP distribution
+			Demo
+				1MB sample: 5 S3 GETs + 5 CDN GETs
+					S3: 3-6 seconds
+					CDN: 0.05 seconds
+		Range-based GETs
+			parallelize your GETs
+				compensates for unreliable networks
+			Demo
+				1MB sample: 5 S3 GETs + 5 CDN GETs
+					S3 sequential 20chunks: 9 seconds
+					S3 parallel: ? much better
+	LIST
+		LIST can be parallelized
+		you can build a secondary index of your keys
+			sort by metadata
+			search ability
+			Secondary lists with: DynamoDB, RDS, CloudSearch EC2, whatever
+	
+	QUESTION: when to use CDN, what's the # of reads when it's good
+
+ Thoran Rodrigues, BigData Corp. Brazil
+ 	500TB/week of raw data
+	hundreds of thousands of distributed PUTs
+	several post-processing steps (LIST, GET)
+	Started with:
+		each page stored as individual S3 object
+			60-70% compression rate
+			name hashing with GUIDs
+			billions of PUTs
+			300k simultaneous PUTs
+			LIST requests to get at "file" names to process
+	Improved to:
+		each site stored as an S3 object
+			90% compressioin rate
+			good naming scheme
+			millions of PUT requests
+			no GUIDs, use epoch
+			better PUT request distribution
+			Secondary indexes with external database to replace LIST requests
+
+ARC311 - Extreme Availability for Mission-Critical Applications
+	extreme availability (XA)
+		declared as next level to HA
+		Tenets for XA
+			use AWS global infrastructure
+			better to apply in the begining
+			impacts everything: processes, people, etc
+			be prepared for any type of failure (network, cascade capacity failure, etc)
+			Graceful failure of each service (simplier version, static, etc)
+			micro services m-SOA
+			architect your availability according to your needs (so manage cost/complexity/etc added by XA)
+	How AWS help to build XA
+		Frontend layer
+			Static S3 website
+			CloudFront
+			R53: latency based routing with multiple regions + health checks (R53 health checks? TODO)
+		Information layer
+			RDS handles failures to switch failed master
+			DynamoDB
+				Streams (requires coding to consume-submit info)
+				Cross-region copy with AWS Data Pipeline
+				create own solution
+			Other nosql dbs:
+				builtin async replicattion
+			
+ARC309 - Building and Scaling Amazon Cloud Drive to Millions of Users
+ Tarlochan Cheema - Software Development Manager, Amazon Cloud Drive, Amazon Web Services
+	Key use cases & challenges
+		blah blah	
+	building blocks
+		content storage, delivery & sharing
+			S3
+			CloudFront
+			R53
+			ELB
+		metadata storage, indexing & querying
+			dynamodb
+			cloudsearch
+			elasticache
+			sqs for replicating metadata
+		content ingestion & transformation
+			kinesis
+			sqs
+			elastic transcoder
+			amazon ec2
+		analytics, monitoring & management
+			redshift
+			emr
+			data pipeline
+			cloudwatch
+			cloudformation
+		screenshot "amazon cloud drive services architecture"
+	
+ Ashish Mishra - Sr Software Dev Engineer, Amazon Web Services
+	facts
+		tens PB of data
+		80% of dev time for monitoring, checking, provisioning
+		traffic is bursty
+		services architecture
+		best practices and lessons learned
+		amazon cloud drive api
+	Tenets
+		durability
+		zero downtime scaling
+		HA/ low latency for CRUD
+		near-realtime queries
+		query requirements span a wide spectrum
+			filtering and sorting
+			full-text search
+			analytics
+			custom
+		lambda arhitecture
+			central replication stream populating multiple backends
+			key components
+				content store
+					S3
+				metadata plane (primary) 1000x times smaller than content data
+					DynamoDB
+				query plane: secondary metadata stores
+					CloudSearch
+					Redshift (heavyweight aggregation)
+				replication stream
+					Kinesis
+				transformation/replication workflows
+					SQS
+					SWF if you have multistage complex workflow
+			screenshot "Content & Metadata Ingestioin"
+			screenshot "Metadata model"
+		Consistency (the most common concern)
+			Row-level atomic operations
+			Per row revision number
+				stricly increasing as the row is updated
+				delete tracked as status change
+			Revision determines precedence at every layer
+			Out-of-order updates
+				resolved by revision
+			Missed updates
+				persistent distributed workflows
+			Spurious updates
+				resolve against primary store
+		Backends
+			Amazon CloudSearch
+				full-text search
+				hosted
+				handles domain read scaling
+			Amazon Redshift
+				Analytics, aggregate metrics
+				Staging table for upserts
+				Both service logs (flux) and metadata (state) are in separate tables
+			In-memory app caches
+				photo service maintains media-specific cache
+			Additional DynamoDB tables
+				key query use cases
+				where consistent performance is paramount
+			going to have more backends
+				and ok with it. see their arch
+
+		Content Download
+			* for some reason use EC2 proxy
+			Primary backend: S3
+			One-off stream processing
+				thumbnail cuts
+			..
+
+		Lessons Learned
+			offload operational heavy lifting
+			moving pieces add overhead
+				multiple layers of integration testing
+			Cascading failures
+				decoupling and top-layer fanout
+					dependencies bad
+			Data consistency
+				build granular guarantees around your model
+ ?QUESTIONS:
+ 	why that proxy between S3 and client
+	how to store folder content
+	cloudfront for downloads?
+	TODO: Booth
+
+
+APP313 - NEW LAUNCH: Amazon EC2 Container Service in Action
+ Deepak Singh - Principal Product Manager, Amazon Web Services
+	why to run it in a cloud
+		envrionmet fidelity
+		easy deployments
+		better fleet management
+		distributed applications
+
+	problems to solve for customers with Container management service
+		requirements from customers::
+			cluster management
+			scaling
+			configuration managment
+			container sprawl
+			availability
+			security
+		features requested:
+			ELB
+			AutoScaling
+			ENIs
+			Tagging
+			Amaon EBS
+			IAM
+			Multi-AZ
+			Security Groups
+		Actually customers want
+			fist class api: Amazon EC2 Container service
+
+	What is it
+		Bulding block service
+		cluster management service
+		manages your containers (types, instances, processes metadata)
+		manages cluster state
+		schedules containers onto your cluster
+		Scalable
+		High performance
+		Secure (instace separation, no shared instances)
+		VPC support
+		Security Groups support
+		ACLs
+
+ Daniel Gerdesmeier - Software Development Engineer, EC2, Amazon Web Services
+	Components
+		Tasks
+			A grouping of related containers
+			screenshot (Task: A grouping of related containsers")
+			Task Definition (a json doc)
+				family
+				version
+				containers
+				screenshot ("Task Definition")
+		Containers
+			Container definition
+				Names and identifies your image
+				includes defaut runtime attributes fore your container
+					ENV vars
+					port mappings
+					container entry point and commands
+					resource constraints
+					etc.
+				screenshot ("Example")
+					name
+					image
+					cpu measured in shares. AWS scale: 1024 shares per core
+					memory
+					portmappings
+					hostport
+					links
+					essential: lets know that we need to restart the whole task if this container dies
+		Clusters
+			Provides a pool of resources for your tasks
+			a grouping of container instances
+			starts empty, dynamially scalable
+		Container Instances
+			An instance on which tasks are scheduled
+			runs AMI with ECS Agent installed
+			Registers into cluster on launch
+			Notes:
+				runs on Amazon Linux kernel
+				agent reports back to ECS
+	Demo
+		$ aws ecs create-cluster default
+		goes to ec2 console to run ec2 instances with amazonn linux kernel
+			attaches to IAM role ECS-Containerinstance
+			assigns security group
+		prepares task definition
+			wordpress app
+			taks definition is a json doc with "containers"
+			screenshot "{ containers blah blah json" wordpress.json
+		goes to ECS cluster View
+			instances appear one by one
+			0 tasks, 0 containers
+		$ aws ecs register-task-definition --family wordpress --version 1.0 wordpress.json
+		$ aws ecs run-task worpress 1.0
+		goes to EC2 Cluster View
+		tasks begin to appear
+		opens wordpress with EC2 Cluster View link
+		$ aws ecs describe-task wordpress:1.0
+		$ vim sleep.json
+			{ "containers" : [ { .. task sleep ..}
+		$ aws ecs list-task-definition sleep
+		$ aws ecs list-task-definitions sleep | xargs -n 1 aws ecs run-task --count 10
+		30 tasks started
+		EC2 Cluster view gets populated with tasks
+		$ aws ecs list-tasks | xargs aws ecs stop-task
+		all tasks disappear from the Cluser View
+
+	Coming Soon
+		ELB integration
+		CloudWatch integration
+		AWS CloudFormation integration
+		Support for Tagging
+		AWS Management Console
+		Partner AMIs (including CoreOS)
+	
+	Pricing
+		No additional charge
+			you pay for AWS resources only
+
+
+ARC202 - Real-World Real-Time Analytics
+ Sebastian Montini - Solutions Architect, Socialmetrix
+ Gustavo Arjones - Co-founder & CTO, Socialmetrix
+
+
+
+
+
+General thoughts:
+	Transformation of current infrastructure to Eucalyptus?
+	Talk to Andrew and Jonathan about AWS lock-in
+	talk to Andrew and Dima about building blocks
+
+Links:
+	http://www.slideshare.net/AmazonWebServices
+	https://www.youtube.com/user/AmazonWebServices/Cloud
