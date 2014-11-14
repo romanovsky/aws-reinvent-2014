@@ -749,8 +749,451 @@ APP313 - NEW LAUNCH: Amazon EC2 Container Service in Action
 
 
 ARC202 - Real-World Real-Time Analytics
- Sebastian Montini - Solutions Architect, Socialmetrix
  Gustavo Arjones - Co-founder & CTO, Socialmetrix
+	about socialmetrics company
+		social media analytics
+		multilanguage
+		twitter certified partner
+		customers
+			nokia
+			yahoo
+		console for brand analytics
+		ontological models
+			screenshot BRANDS diagram
+		Share of topics
+			screenshot
+		realtime analytics
+			http://smx.io/reinvent
+	
+	Challenges
+		Variety
+			different data sources
+			different API
+			SLA
+			Method (pull vs push)
+			Rate-limit
+		Velocity
+			updates every second
+			Top users, top hashtags every minute
+			after event analysis are mede with batch over complete dataset
+			spikes of 20k tweets/s
+		Disambiguation
+			Oi Telecom==Hi in portuguesse
+			PAN == bread in spanish
+			orange telecom== fruit
+		Data Enrichment
+			Demographics
+			Sentiment
+				Influencers
+		Human Analysis
+		Alert and report
+			Clear UI
+			Slice-dice for business
+			real time
+ 
+ Sebastian Montini - Solutions Architect, Socialmetrix
+	Drivers for architecture evolution
+		more customers, bigger customers
+		more features
+		keep costs under control
+	
+	Architecture evolution
+		1 stage (startup, few customers)
+			requirements:
+				data isolation
+			tools:
+				mysql
+				java
+			multi-instance arch
+			simple vertical scalability
+			mysql performance tuning
+			learned:
+				multi-instance is harder to manage, but minimizes instability impact on customers
+				vertical scalability: poor resource management
+				mysql schema changes translates into downtime
+		2nd stage
+			requirements:
+				separation of responsibilities (crawling, processing)
+				horizontal scalability
+				fast provisiong
+				cost reduction
+			changed:
+				migrated to AWS
+				added queue
+				replaced mysql for RDS
+				use CloudFormation
+				use autoscaling groups
+			tools:
+				Java
+				rabbitMQ
+				mongoDB
+				RDS
+				CloudFormation
+			learned:
+				PIOPS are good
+				tuning and auto scaling policies can be hard
+				AWS CloudFormation: great for migration, not enough for daily ops: lacks flexibility for fast provision services
+		3rd stage
+			requirements:
+				deliver new features (NRT, more complex analytics)
+				scale fast
+				be resilient against failure
+				adding and improving data sources
+				keep costs under control
+			changed:
+				Apache storm
+				HA rabbitmq
+				+Chef
+				AWS EMR
+				+S3 + Glacier
+			tools:
+				java
+				mongodb
+				redis
+				apache storm
+				rabbitmq
+				amazon Elastic MapReduce hadoop/hive
+				AWS CloudFormation + Chef
+				AWS S3
+				AWS Glacier
+			learned:
+				spot instances + reserved instances
+				Hive = SQL -> SQL scripts are hard to test
+				Bulk upserts on Amazon RDS can be expensive (PIOPS)
+				Amazon DynamoDB is great, but expensive (for their use-case: batch processing big amount of data)
+			(screenshot with diagram)
+		4th stage
+			requirements:
+				monitor milions of social media profiles
+				make data accessible (exploration, PoC)
+				Improve UI repsonse times
+				testing our data pipelines
+				reprocessing (faster)
+			changed:
+				+Cassandra (DSE)
+				+MongoDB MMS
+				+Apache Spark
+			tools:
+				java
+				rabbitmq
+				mongodb MMS
+				Cassandra
+				spark
+			learned:
+				leverage whole AWS ecosystem
+					Datastax AMI + Opscenter integration
+					MongoDB MMS: automation magic!
+					Apache Spark unit testing + EC2 launch scripts
+						EMR spark delays in release version, but EMR has good integration of Spark
+				Amazon EMR doesn't have the latest version
+			screenshot diagram of current architecture 
+			screenshot "Architecture evolution" costs/customers
+
+ Gustavo Arjones - Co-founder & CTO, Socialmetri continued
+	Lessons learned overall journey of arch evolution
+		Automate from day 1 (cloudformation + chef)
+		Monitor systems activity, understand your data patterns, eg LogStash/ELK
+		Always have a Source of Truth (Amazon S3 + Glacier)!!!
+		Make your Source of Truth searchable (ElasticSearch)
+		Approximation is a good thing: HLL, CMS, Bloom saves a lot of memory
+		Write your pipelines considering reprocessing needs
+		Avoid at all costs framework explosion
+		AWS ecosystem allows rapid prototype
+
+	NextGen of the product:
+		reduce moving parts (less frameworks as possible)
+		apache spark as central processing framework
+			realtime (micro-batch)
+			batch-processing
+		kafka or Amazon Kinesis (Message Broker)
+		Cassandra (Time-seies storage)
+		ElasticSEarch (Content Indexer)
+
+APP310 - Scheduling Using Apache Mesos in the Cloud
+ Sharma Podila - Senior Software Engineer, Netflix
+
+	Mantis: an operational insights infrastructure
+		anomaly detection
+		system health
+		stream locality
+		Job "light weight" or dynamic
+			configurable job SLA
+			Autoscale for optimal utilization
+	screenshot mantis ..
+	Apache Mesos
+		Cluster resource manager
+		Develop and run resource-effcient distributed systems
+		screenshot apache Mesos architecture
+		why use mesos on top of the cloud?
+			resource granularity
+			low startup latency (vs instances)
+		why another framework?
+			writing an apache mesos framework can be easy
+				though not so easy to scale, fault tolerance, etc
+			scheduling can be a hard problem to solve
+	Challenges in a cloud
+		Fault tolerance with ephemeral slave instances
+		HA for Mesos master and framework
+		Autoscaling slave cluster (not availalbe for existing frameworks yet, netw=flix wrote their own)
+		Autoscaling callenge
+			Scaling up in Amazon EC2 is relatively easy = f(#pending tasks)
+			Scaling down requires bin packing
+		Stream locality challenge
+			data stream -> (task1, .., taskN)
+		Stream processing challenges (screenshot)
+	Framework design choices
+		Framework avaiabilit
+		Resource allocation granularity
+		Task state persistence
+		Mesos checkpoint feature
+		Relinquishing Mesos offers
+	Task Scheduling objectives
+		quickly assign resources to tasks
+		Customizable service level objectives, constraints
+			autoscaling
+			task locality/affinity
+			AZ balancing
+			plugins for etensibility
+
+	Fenzo, task scheduler
+		generic task scheduler
+			heterogeneous
+			autoscale
+			visibility
+			high speed
+			prlugins for constraints
+		screenshot fenzo usage in frameworks
+	
+	The scheduling problem screenshot
+	Scheduling optimizations screenshot
+	Fenzo scheduling algorithm
+		for each task
+			evaluate constraint, fitness on each host
+				until fitness is good enough
+				a minimuum nu..
+	hard constraints
+		affects resource selection (AZ, CPU type)
+	Soft constraints
+		affects task placement
+	Fenzo fitness/constraint plugins
+		Bin packing
+		host attribute value constraint
+		unique host attribute constraint
+		Exclusive host constraint
+		balance host attribute constraint
+		* every above can be specified as hard or soft constraints
+	Bin packing fitness calculator
+		fitness = usedCPUs/totalCPUs
+	Bin packing experiment
+		assign resources to tasks from 3k 8-CPU slaves
+		tasks of different sizes: 1cpu, 3cpu, 6cpu
+		iteratively assign bunch of tasks
+		screenshot "Bin packing sample results"
+	Task runtime bin packing screenshot
+	Scream locality fitness
+		Stream locality fitness - percentage of tasks
+	Autoscaling cluster in fenzo
+		scale up and down Apache mesos
+		Rules-based autoscaling
+			setup rules per host attribute value
+		Scaling up via shortfall period
+		Auto scaling strategy
+			EC2 auto scaling groups have 3 number to control (min, max, desirable)
+	
+RC318 - Continuous Delivery at a Rate of 500 Deployments a Day
+ Elias Torres - VP of Engineering, Driftt
+	good deployment strategy:
+		use declarative formats for setup automation to minimize time and cost for new develoeprs
+		have a clean contract with the underlying operating system, offering max portability betweenn execution environments
+		a service suitable for deployment on modern cloud platforms
+		minimize divergence between development and production, enabling continuous deployment
+		scale up without significant changes to tooling, architecture, or development practices
+	every service is just a IP:port pair
+		small config, simple to add more services
+			port=
+			logdir=
+			zk_cluster=
+			aws_key=
+			aws_secret= !bad
+			that's it
+	hubspot use cases:
+		Deployable items
+			219 web services (routing, HA required)
+			246 workers (think queues)
+			205 scheduled jobs
+			173 on demand (on-offs)
+		facts
+			Every engineer at hubspot deploys to production on average 2-3 times a day
+			it takes on average 10-25 minutes to go from commit to production
+			99% of these releases dont't require much coordination from other teams
+				all teams can work in parallel
+			mSOA in action:
+				auth system is a service
+				login page is a service
+				blogging editing system is one, blogging redering system is another
+				navigation bar is a service
+				contact management system is one, list segmentationi is another
+				reports application is a service
+			email sending ability is a service
+		Benefits
+			speed wins > Speed Product development
+			increase change rate > Remove Friction
+				Small teams, high trust, low process
+				DEVs happy with job
+				culture of freedom and responibility
+			Microservices
+				libraries and cross cutting APIs to simplify coding
+				automate deployment by tooling
+		Tools
+			Apache Mesos
+				runs apps in your cluster just like processes on a single computer
+				gives IP:port pair
+				Benefits
+					Multi-tenancy for Everyone
+					better resource utilization
+					resource isolation
+					fault-tolerance (no SPOFs)
+					easy to scale
+					Devs don't run instances anymore
+			HubSpots/Singularity
+				auto-scale for microservice
+			NGinx, wordpress, mysql, singularity, vagrant
+			Demo
+				brew cask install virtualbox
+				brew cask install vagrant
+				git clone Singularity.git
+				vagrant install plugins
+				vagrant up
+
+				creates a new request for 1 instace for mysql
+				creates a new request for load balanced wordpress
+				vim mysql.json
+				hits API of singularity to run process the requests for mysql and wordpress
+
+				singularity auto configures nginx to route microservice traffic
+					adds upstreams when new instances come up
+					reconfigures ip:ports
+
+MBL202-R - NEW LAUNCH: Getting Started with AWS Lambda (Repeat Session)
+ Tim Wagner Director of Engineering, AWS Mobile, Amazon Web Services 
+	why?
+		problems
+			you want to thumbail images as they arrive in S3 bucket
+			or your'd like to check that every address sotred in amazon Dynamodb
+			provision a fleet of proxy machines to capture uploads
+			for each upload, enqueue a job to process it
+			provision a second fleet of machines to read and process jobs
+			pick a deployment solution
+			plan capacity, accounting for fault tolerance, etc
+			monitor for capacity, health, security,etc
+			migration,etc
+		what if were a better way?
+			what if every aws service generated events?
+			what if you culd repond to them easily?
+				easy to author, deploy, manage, maintain, scale, pay for, maintain
+		Event-driven compute
+			stateless, request-driven code called "Lambda functions"
+			Triggered by events (State transitions) in other services:
+				PUT to S3 bucket
+				write to an DynamoDB table
+				transition in an amazon EC2 instance
+				message in SQS
+				in fact any API call
+			AWS Lambda: connective tissue for AWS services
+		What could we do with it?
+			Data triggers
+				S3
+					orig image uploaded -> s3 generates event -> lambda func reacts and creates thumbernail
+				Dynamodb (streams)
+					stream -> aws lambda -> do something
+				Audit and notify
+					AWS API calls -> CloudTrail Logs -> bucket events -> lambda -> SNS notification
+				Custom events
+					lambda has API for that
+	Requirements
+		performance
+			no infrastructure to manage
+				focus on business logic, not infrastrcutre
+				upload your code; lambda handles
+					capacity
+					scaling
+					deployment
+					fault tolerance
+					monitoring
+					logging
+					webservice frontend
+					security patching
+		automatic scaling
+			each object uploaded to s3 is an event
+			each event is a lambda request
+			lambda scales to match the event rate
+			don't worry about over or under provisioning
+			pay only for what you use
+		Bring your own code (kind of legacy)
+			create threads and processes, run batch scripts or other executables, and read/write files in /tmp
+			include any library with your lambda function code, even native libraries
+		Fine-grained pricing
+			price compute time by 100ms, so even short jobs make sence
+			low request charge
+			no hourly, daily, monthly minimums
+	
+	New AWS Compute Offeing
+		AWS Lambda vs EC2
+			L: request-driven
+			E: infrastructure rental
+			L: easy- fixed OS, fixed language
+			E: Flexible - choose instance type, os, language
+			L: AWS owns and manages the infrastructure
+			E: You own and manae the infrastructure
+			L: implicit scaling
+			E: provision
+	Writing the code
+		the basics
+			node.js at launch, more langs to come
+			aws sdk comes build in and ready to use
+			imagemagic included
+		stateless
+			use s3, dynamoddb, other internet-available storage for any persistend data
+			dont' expect affinity to the infrastructure (you can't "log in to the box")
+		familiar
+			use processes, threads, /tmp/, sockets
+			bring your own libraries, even native ones
+			no inbound socket connections
+	Configuring the lambda functions
+		pick a name
+		pick a size
+			set memmory to any size from 128MB to 1GB in 64 steps
+			receive an equivalent portion of other resources (disk, net, cpu)
+			easy, single-dial solution to set price/performance preference
+			lambda tells you how much memory you used, so you can tune this setting
+		pick an event source (or several)
+	Wiring up events
+		AWS services send events to lambda as json
+		events are reliably transmitted
+		lambda functions run for each event
+			PUSH: S3 and custom events
+				unordered model
+				3 retries
+			PULL: DynamoDB and Amazon Kinesis
+				Ordered model with multiple records per event
+				unlimited retries (until data expires)
+	Demo
+
+	Best practices
+		setup roles correcly
+			execution roles determine what your function can do
+			invocation roles determine who can execute it
+		use recursion with care
+			if you write an object to S3 or DynamoDB inside an event handler, you will trigger another event!
+
+	How to get it
+		lambda preview
+			supports s3, dynamodb streams, kinesis streams
+		lambda console, sdk, cli
+		limit 25 concurrent requests per account
+		limit 60 seconds running time per request
+		
+	
 
 
 
@@ -764,3 +1207,4 @@ General thoughts:
 Links:
 	http://www.slideshare.net/AmazonWebServices
 	https://www.youtube.com/user/AmazonWebServices/Cloud
+	search for "AWS re:invent" on iTunes
